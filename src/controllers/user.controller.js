@@ -99,8 +99,6 @@ const loginUser = asyncHandler( async (req, res) => {
     //access and refresh toked
     //send cookies
 
-    // console.log(req.body);
-
     const {email, username, password} = req.body;
 
     if(!username && !email) {
@@ -151,8 +149,8 @@ const logoutUser = asyncHandler( async(req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set: {
-                refreshToken: undefined,
+            $unset: {
+                refreshToken: 1, //removes the field from document
             },
         },
         {
@@ -233,7 +231,11 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     user.password = newPassword;
     await user.save({ validateBeforeSave: false})
 
-    return res;
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "Password updated successfully")
+    );
 })
 
 const getCurrentUser = asyncHandler( async (req, res) => {
@@ -298,7 +300,7 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiError(200, user, "Avatar updated")
+        new ApiResponse(200, user, "Avatar updated")
     )
 })
 
@@ -330,7 +332,7 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiError(200, user, "Cover Image updated")
+        new ApiResponse(200, user, "Cover Image updated")
     )
 })
 
@@ -454,7 +456,7 @@ const getWatchHistory = asyncHandler( async (req, res) => {
         new ApiResponse(
             200,
             user[0].watchHistory,
-            "Watch history fetchedn successfully"
+            "Watch history fetched successfully"
         )
     )
 })
