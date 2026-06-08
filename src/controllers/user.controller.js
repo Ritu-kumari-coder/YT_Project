@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -54,8 +54,14 @@ const registerUser = asyncHandler( async (req, res) => {
 
     const user = await User.create({
         fullName,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || "",
+        avatar: {
+            url: avatar.url,
+            publicId: avatar.public_id
+        },
+        coverImage: {
+            url: coverImage?.url,
+            publicId: coverImage?.public_id
+        },
         email, 
         password, 
         username: username.toLowerCase()
@@ -285,15 +291,20 @@ const updateUserAvatar = asyncHandler( async (req, res) => {
         throw new ApiError(500, "Failed to upload avatar file on cloudinary")
     }
 
+    await deleteFromCloudinary(req.user?.avatar?.publicId, "image");
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
-                avatar: avatar.url
+                avatar: {
+                    url: avatar?.url,
+                    publicId: avatar?.public_id
+                }
             }
         }, 
         {
-            new: true
+            returnDocument: "after"
         }
     ).select("-password -refreshToken")
 
@@ -317,15 +328,20 @@ const updateUserCoverImage = asyncHandler( async (req, res) => {
         throw new ApiError(500, "Failed to upload cover image file on cloudinary")
     }
 
+    await deleteFromCloudinary(req.user?.coverImage?.publicId, "image");
+
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
-                coverImage: coverImage.url
+                coverImage: {
+                    url: coverImage?.url,
+                    publicId: coverImage?.public_id
+                }
             }
         }, 
         {
-            new: true
+            returnDocument: "after"
         }
     ).select("-password -refreshToken")
 
@@ -461,6 +477,19 @@ const getWatchHistory = asyncHandler( async (req, res) => {
     )
 })
 
+const deleteUser = asyncHandler (async (req, res) => {
+    await deleteFromCloudinary(req.user?.avatar?.publicId, "image");
+    await deleteFromCloudinary(req.user?.coverImage?.publicId, "image");
+    
+    await User.findByIdAndDelete(req.user._id);
+        
+    return res
+    .status(200)
+    .json(
+        new ApiError(200, {}, "User deleted successfully")
+    )
+})
+
 export { 
     registerUser, 
     loginUser,
@@ -472,5 +501,6 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    deleteUser
 }
