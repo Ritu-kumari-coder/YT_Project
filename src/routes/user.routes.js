@@ -14,7 +14,6 @@ import {
     getUserChannelProfile,
     getWatchHistory,
 } from "../controllers/user.controller.js";
-import { get } from "mongoose";
 
 const router = Router();
 
