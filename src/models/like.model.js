@@ -17,6 +17,6 @@ const likeSchema = new mongoose.Schema({
         type: Schema.Types.ObjectId,
         ref: "Tweet"
     }
-}, {Types: true})
+}, {timestamps: true})
 
 export const Like = mongoose.model("Like", likeSchema)
